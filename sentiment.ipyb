@@ -1,0 +1,67 @@
+{
+  "cells": [
+    {
+      "metadata": {
+        "trusted": true
+      },
+      "cell_type": "code",
+      "source": "import re\nimport tweepy\nfrom tweepy import OAuthHandler\nfrom textblob import TextBlob",
+      "execution_count": 3,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "trusted": true
+      },
+      "cell_type": "code",
+      "source": "class TwitterClient(object):\n    '''\n    Generic Twitter Class for sentiment analysis.\n    '''\n\n    def __init__(self):\n        '''\n        Class constructor or initialization method.\n        '''\n        # keys and tokens from the Twitter Dev Console\n        consumer_key = \"xQSphVAx9PYK9vI9yCA3zElwD\"\n        consumer_secret = \"flaz0CB3QxKa0HYvpd1zERIJBRVgYim97WZHDstasLgUF3WMYY\"\n        access_token = \"1137398265836474368-46aBevGxNcHmyZNudcJS7FBa3sKbpV\"\n        access_token_secret = \"FIxNk3WMkwYliC8AHScrau12izVm1bDWPi09dFdELKvwJ\"\n        # attempt authentication\n        try:\n            # create OAuthHandler object\n            self.auth = OAuthHandler(consumer_key, consumer_secret)\n            # set access token and secret\n            self.auth.set_access_token(access_token, access_token_secret)\n            # create tweepy API object to fetch tweets\n            self.api = tweepy.API(self.auth)\n        except:\n            print(\"Error: Authentication Failed\")\n\n    def clean_tweet(self, tweet):\n        '''\n        Utility function to clean tweet text by removing links, special characters\n        using simple regex statements.\n        '''\n        return ' '.join(re.sub(\"(@[A-Za-z0-9]+)|([^0-9A-Za-z \\t])(\\w+:\\/\\/\\S+)\", \" \", tweet).split())\n\n    def get_tweet_sentiment(self, tweet):\n        '''\n        Utility function to classify sentiment of passed tweet\n        using textblob's sentiment method\n        '''\n        # create TextBlob object of passed tweet text\n        analysis = TextBlob(self.clean_tweet(tweet))\n        # set sentiment\n        if analysis.sentiment.polarity > 0:\n            return 'positive'\n        elif analysis.sentiment.polarity == 0:\n            return 'neutral'\n        else:\n            return 'negative'\n\n    def get_tweets(self, query, count=10):\n        '''\n        Main function to fetch tweets and parse them.\n        '''\n        # empty list to store parsed tweets\n        tweets = []\n\n        try:\n            # call twitter api to fetch tweets\n            fetched_tweets = self.api.search(q=query, count=count)\n\n            # parsing tweets one by one\n            for tweet in fetched_tweets:\n                # empty dictionary to store required params of a tweet\n                parsed_tweet = {}\n\n                # saving text of tweet\n                parsed_tweet['text'] = tweet.text\n                # saving sentiment of tweet\n                parsed_tweet['sentiment'] = self.get_tweet_sentiment(tweet.text)\n\n                # appending parsed tweet to tweets list\n                if tweet.retweet_count > 0:\n                    # if tweet has retweets, ensure that it is appended only once\n                    if parsed_tweet not in tweets:\n                        tweets.append(parsed_tweet)\n                else:\n                    tweets.append(parsed_tweet)\n\n                # return parsed tweets\n            return tweets\n\n        except tweepy.TweepError as e:\n            # print error (if any)\n            print(\"Error : \" + str(e))\n\ndef main():\n    # creating object of TwitterClient Class\n    api = TwitterClient()\n    # calling function to get tweets\n    tweets = api.get_tweets(query='Donald Trump', count=200)\n\n    # picking positive tweets from tweets\n    ptweets = [tweet for tweet in tweets if tweet['sentiment'] == 'positive']\n    # percentage of positive tweets\n    print(\"Positive tweets percentage: {} %\".format(100 * len(ptweets) / len(tweets)))\n    # picking negative tweets from tweets\n    ntweets = [tweet for tweet in tweets if tweet['sentiment'] == 'negative']\n    # percentage of negative tweets\n    print(\"Negative tweets percentage: {} %\".format(100 * len(ntweets) / len(tweets)))\n    # percentage of neutral tweets\n    print(\"Neutral tweets percentage: {} %\".format(100 * (len(tweets) - len(ntweets) - len(ptweets)) / len(tweets)))\n\n    # printing first 5 positive tweets\n    print(\"\\n\\nPositive tweets:\")\n    for tweet in ptweets[:10]:\n        print(tweet['text'])\n\n    # printing first 5 negative tweets\n    print(\"\\n\\nNegative tweets:\")\n    for tweet in ntweets[:10]:\n        print(tweet['text'])",
+      "execution_count": 5,
+      "outputs": []
+    },
+    {
+      "metadata": {
+        "trusted": true
+      },
+      "cell_type": "code",
+      "source": "if __name__ == \"__main__\":\n    # calling main function\n    main()",
+      "execution_count": 6,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": "Positive tweets percentage: 26.666666666666668 %\nNegative tweets percentage: 33.333333333333336 %\nNeutral tweets percentage: 40.0 %\n\n\nPositive tweets:\nRT @realDonaldTrump: Former Democrat Senator Harry Reid just stated that Donald Trump is very smart, much more popular than people think, i…\nRT @VanityFair: It sure sounds like Trump lied, again, about striking “the greatest and biggest deal ever\" with China https://t.co/1Nzi9Szl…\nRT @tomiahonen: @tribelaw Donald Trump: Great &amp; Unmatched Wisdom\n\nIran: after 3 decades of pressure: nukes treaty. Trump tears it up\n\nRussi…\nRT @ejmalrai: #US President Donald Trump keeps making fun of #SaudiArabia King Salman who increases the number of contracts and billions si…\nRT @PalmerReport: New York State is temporarily pulling Michael Cohen out of prison this week so he can testify before a grand jury that's…\nRT @funder: Donald Trump is currently the greatest threat to our national security. By far. No close second. Have a nice Monday.\nRT @RealWayneRoot: PROOF of fraud by NY Times &amp; liberal media. I was speaker at this 3 day event. 30 fantastic speeches &amp; panels. My speech…\nRT @EdwardTHardy: Defence Secretary Mark Esper has confirmed that Donald Trump has ordered a larger withdrawal of US forces from northeaste…\nRT @Normsmusic: @funder While you all are worrying about ISIS, the greatest threat to our country is Donald Trump.\nRT @matthewamiller: “Trade wars are good and easy to win”....if the person on the other side of the negotiating table is Donald Trump. http…\n\n\nNegative tweets:\nRT @KamalaHarris: Donald Trump uses his Twitter account to incite hate and violence. He threatens those who seek to hold him accountable. S…\nRT @WordswithSteph: The Resurrection of ISIS \nCourtesy of Donald J. Trump\n\nDonald Trump Has Single Handedly Brought ISIS Back From The Dead…\nRT @JillWineBanks: Trump and his toadies in the Republican party deserve no mercy for the totally predictable outcome of Donald protecting…\nRT @drawandstrike: A music video was made depicting a rapper shooting a fake Donald Trump.\n\nA female comedian made an 'art piece' of hersel…\nRT @Carroll_322: Donald Trump is a threat to Deep State Globalist who have been bilking our Constitutional Republic dry for years with pay…\nRT @tribelaw: It’d be hard to overstate how preposterous and legally unhinged Judge Rao’s dissent in Trump v. Mazars was. \nhttps://t.co/UKQ…\nDonald Trump Has Single Handedly Brought ISIS Back From The Dead  https://t.co/2tO1bHrq8S\nRT @SocialPowerOne1: Donald Trump Has Single Handedly Brought ISIS Back From The Dead https://t.co/pyX0p5atBZ\nRT @DeanPerl1: \"A graphically violent parody video, shown at a meeting of President Donald Trump's supporters at his Miami resort, depicted…\nWhy can’t we FIRE bad representatives https://t.co/TcOpkxNfCl\n",
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "metadata": {
+        "trusted": true
+      },
+      "cell_type": "code",
+      "source": "",
+      "execution_count": null,
+      "outputs": []
+    }
+  ],
+  "metadata": {
+    "kernelspec": {
+      "name": "python36",
+      "display_name": "Python 3.6",
+      "language": "python"
+    },
+    "language_info": {
+      "mimetype": "text/x-python",
+      "nbconvert_exporter": "python",
+      "name": "python",
+      "pygments_lexer": "ipython3",
+      "version": "3.6.6",
+      "file_extension": ".py",
+      "codemirror_mode": {
+        "version": 3,
+        "name": "ipython"
+      }
+    }
+  },
+  "nbformat": 4,
+  "nbformat_minor": 2
+}
